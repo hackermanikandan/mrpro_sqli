@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Load configuration from file
+if [ -f "config.txt" ]; then
+    source config.txt
+fi
+
+# Set default values for variables
+filename="${filename:-}"
+threads="${threads:-5}"
+output_dir="${output_dir:-./sqlmap}"
+
+# Validate inputs
+if [[ $# == 0 ]]; then
+    echo "Usage: $0 -f {file_name}"
+    exit 1
+elif [[ ! -f "$filename" ]]; then
+    echo "$filename does not exist."
+    exit 1
+fi
+
+# Function to execute SQLmap against a URL
+function run_sqlmap {
+    local url="$1"
+    sqlmap -u "$url" --batch --random-agent --output-dir="$output_dir" "$@"
+}
+
+# Read input file line-by-line and execute SQLmap against each URL in parallel
+cat "$filename" | parallel -j "$threads" "run_sqlmap {} --dbs"
+
+echo "Done."
+
